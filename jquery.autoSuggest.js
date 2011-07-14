@@ -51,17 +51,30 @@
 		  	resultsComplete: function(){}
 	  	};  
 	 	var opts = $.extend(defaults, options);	 	
-		
-		var d_type = "object";
-		var d_count = 0;
-		if(typeof data == "string") {
-			d_type = "string";
-			var req_string = data;
-		} else {
-			var org_data = data;
-			for (k in data) if (data.hasOwnProperty(k)) d_count++;
-		}
-		if((d_type == "object" && d_count > 0) || d_type == "string"){
+
+        function countValidItems(data) { var n = 0; for (k in data) if (data.hasOwnProperty(k)) n++; return n; }
+
+        var d_fetcher;
+        if(typeof data == "function") {
+            d_fetcher = data;
+        } else if(typeof data == "string") {
+            d_fetcher = function(query, next) {
+                var limit = "";
+                if(opts.retrieveLimit){
+                    limit = "&limit="+encodeURIComponent(opts.retrieveLimit);
+                }
+                abortRequest();
+                var url = data + '?' + opts.queryParam + '=' + encodeURIComponent(query) + limit + opts.extraParams;
+                $.getJSON(url, function(data){
+                    var new_data = opts.retrieveComplete.call(this, data);
+                    next(new_data, query);
+                });
+            };
+        } else if(typeof data == "object" && countValidItems(data) > 0) {
+            d_fetcher = function(query, next) { next(data, query); };
+        }
+
+        if(d_fetcher) {
 			return this.each(function(x){
 				if(!opts.asHtmlID){
 					x = x+""+Math.floor(Math.random()*100); //this ensures there will be unique IDs on the page if autoSuggest() is called multiple times
@@ -223,39 +236,29 @@
 					if( lastKeyPressCode == 46 || (lastKeyPressCode > 8 && lastKeyPressCode < 32) ){ return results_holder.hide(); }
 					var string = input.val().replace(/[\\]+|[\/]+/g,"");
 					if (string == prev) return;
-					prev = string;
-					if (string.length >= opts.minChars) {
-						selections_holder.addClass("loading");
-						if(d_type == "string"){
-							var limit = "";
-							if(opts.retrieveLimit){
-								limit = "&limit="+encodeURIComponent(opts.retrieveLimit);
-							}
-							if(opts.beforeRetrieve){
-								string = opts.beforeRetrieve.call(this, string);
-							}
-							$.getJSON(req_string+"?"+opts.queryParam+"="+encodeURIComponent(string)+limit+opts.extraParams, function(data){ 
-								d_count = 0;
-								var new_data = opts.retrieveComplete.call(this, data);
-								for (k in new_data) if (new_data.hasOwnProperty(k)) d_count++;
-								processData(new_data, string); 
-							});
-						} else {
-							if(opts.beforeRetrieve){
-								string = opts.beforeRetrieve.call(this, string);
-							}
-							processData(org_data, string);
-						}
-					} else {
-						selections_holder.removeClass("loading");
-						results_holder.hide();
-					}
-				}
-				var num_count = 0;
-				function processData(data, query){
+                    prev = string;
+                    if ( string.length >= opts.minChars ) {
+                        selections_holder.addClass('loading');
+                        processRequest(string);
+                    }
+                    else {
+                        selections_holder.removeClass('loading');
+                        results_holder.hide();
+                    }
+                }
+                function processRequest(string){
+                        if ( opts.beforeRetrieve ) {
+                            string = opts.beforeRetrieve.call(this, string);
+                        }
+                  d_fetcher(string, processData);
+                        }
+                
+                var num_count = 0;
+                function processData(data, query) {
 					if (!opts.matchCase){ query = query.toLowerCase(); }
 					var matchCount = 0;
 					results_holder.html(results_ul.html("")).hide();
+                    var d_count = countValidItems(data);
 					for(var i=0;i<d_count;i++){				
 						var num = i;
 						num_count++;
