@@ -85,7 +85,15 @@
                 var x_id;
                 var input = $(this);
 
-                opts.start.call(this);
+                opts.start.call(this, {
+                    add: function(data) {
+                             add_selected_item(data, 'u' + $('li', selections_holder).length).addClass('blur');
+                         },
+                    remove: function(value) {
+                                values_input.val(values_input.val().replace(","+value+",",","));
+                                selections_holder.find('li[data-value = "' + value + '"]').remove();
+                            },
+                });
                 
                 if ( ! opts.asHtmlID ) {
                     x = x + Math.floor(Math.random() * 100); //this ensures there will be unique IDs on the page if autoSuggest() is called multiple times
@@ -476,6 +484,7 @@
                     
                     org_li.before(item.html(data[opts.selectedItemProp]).append(close));
                     opts.selectionAdded.call(this, org_li.prev(), data[opts.selectedValuesProp]);
+                    return org_li.prev();
                 }
 
                 function moveSelection(direction){
