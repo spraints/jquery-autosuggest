@@ -83,7 +83,15 @@
 					x = opts.asHtmlID;
 					var x_id = x;
 				}
-				opts.start.call(this);
+                opts.start.call(this, {
+                    add: function(data) {
+                             add_selected_item(data, 'u' + $('li', selections_holder).length).addClass('blur');
+                         },
+                    remove: function(value) {
+                                values_input.val(values_input.val().replace(","+value+",",","));
+                                selections_holder.find('li[data-value = "' + value + '"]').remove();
+                            },
+                });
 				var input = $(this);
 				input.attr("autocomplete","off").addClass("as-input").attr("id",x_id).val(opts.startText);
 				var input_focus = false;
@@ -342,6 +350,7 @@
 						});
 					org_li.before(item.html(data[opts.selectedItemProp]).prepend(close));
 					opts.selectionAdded.call(this, org_li.prev());	
+                    return org_li.prev();
 				}
 				
 				function moveSelection(direction){
