@@ -289,7 +289,10 @@
                       string = opts.beforeRetrieve.call(this, string);
                   }
                   abortRequest();
-                  d_fetcher(string, processData);
+                  d_fetcher(string, function(data, query) {
+                    if(!query) query = string;
+                    processData(data, query);
+                  });
                 }
                 var num_count = 0;
                 function processData(data, query){

@@ -234,7 +234,7 @@ test("Use function for data source", function() {
     var wasCalled = false;
     function get_data(query, next) {
         wasCalled = true;
-        next([{value: '123', name: 'zzzfffgg'}], query);
+        next([{value: '123', name: 'Yankees'}, {value: '234', name: 'Cubs'}], query);
     }
 
     el = $('<input type="text" name="autosuggest" value=""></input>')
@@ -246,6 +246,37 @@ test("Use function for data source", function() {
     stop();
     setTimeout(function() {
       equals(wasCalled, true, "Was the callback called?");
+
+      res = results();
+      equals(res.length, 1, "Number of suggestions");
+      equals($(res[0]).text(), "Yankees", "first suggestion");
+
+      start();
+      remove();
+    }, 500);
+});
+
+test("Call 1-arg next, using function for data source", function() {
+    var wasCalled = false;
+    function get_data(query, next) {
+        wasCalled = true;
+        next([{value: '123', name: 'Yankees'}, {value: '234', name: 'Cubs'}]);
+    }
+
+    el = $('<input type="text" name="autosuggest" value=""></input>')
+        .appendTo("#container").autoSuggest(get_data, options);
+
+    el.focus();
+    el.val("Y")
+    el.simulate("keydown", {"keyCode": keyCode.Y});
+    stop();
+    setTimeout(function() {
+      equals(wasCalled, true, "Was the callback called?");
+
+      res = results();
+      equals(res.length, 1, "Number of suggestions");
+      equals($(res[0]).text(), "Yankees", "first suggestion");
+
       start();
       remove();
     }, 500);
